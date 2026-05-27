@@ -1,0 +1,39 @@
+{
+    "Contents": [
+        {
+            "Key": "0c80ef6a8f443215e9a0b88b5d883dbbeb08a42650d2b74aa79fc5a9152bff3f.mp4",
+            "LastModified": "2026-05-26T17:18:40+00:00",
+            "ETag": "\"bb4a4d062a8be9931b5613b1a2714681\"",
+            "ChecksumAlgorithm": [
+                "CRC32"
+            ],
+            "ChecksumType": "FULL_OBJECT",
+            "Size": 12603957,
+            "StorageClass": "STANDARD"
+        },
+        {
+            "Key": "boots-image-horizontal.png",
+            "LastModified": "2026-05-26T17:03:04+00:00",
+            "ETag": "\"bc092e3b30e6a0c0826cad2b58e5051f\"",
+            "ChecksumAlgorithm": [
+                "CRC64NVME"
+            ],
+            "ChecksumType": "FULL_OBJECT",
+            "Size": 445869,
+            "StorageClass": "STANDARD"
+        },
+        {
+            "Key": "test-upload.mp4",
+            "LastModified": "2026-05-26T17:14:39+00:00",
+            "ETag": "\"bcbece726f1641cc014ea14d0b921a08-2\"",
+            "ChecksumAlgorithm": [
+                "CRC64NVME"
+            ],
+            "ChecksumType": "FULL_OBJECT",
+            "Size": 12603957,
+            "StorageClass": "STANDARD"
+        }
+    ],
+    "RequestCharged": null,
+    "Prefix": ""
+}

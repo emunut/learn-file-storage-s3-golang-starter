@@ -1,13 +1,14 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
 
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/database"
-	"github.com/google/uuid"
-
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 )
@@ -18,25 +19,19 @@ type apiConfig struct {
 	platform         string
 	filepathRoot     string
 	assetsRoot       string
+	s3Client         *s3.Client
 	s3Bucket         string
 	s3Region         string
 	s3CfDistribution string
 	port             string
 }
 
-type thumbnail struct {
-	data      []byte
-	mediaType string
-}
-
-var videoThumbnails = map[uuid.UUID]thumbnail{}
-
 func main() {
 	godotenv.Load(".env")
 
 	pathToDB := os.Getenv("DB_PATH")
 	if pathToDB == "" {
-		log.Fatal("DB_URL must be set")
+		log.Fatal("DB_PATH must be set")
 	}
 
 	db, err := database.NewClient(pathToDB)
@@ -75,14 +70,21 @@ func main() {
 	}
 
 	s3CfDistribution := os.Getenv("S3_CF_DISTRO")
-	if s3CfDistribution == "" {
-		log.Fatal("S3_CF_DISTRO environment variable is not set")
-	}
 
 	port := os.Getenv("PORT")
 	if port == "" {
 		log.Fatal("PORT environment variable is not set")
 	}
+
+	awsCfg, err := config.LoadDefaultConfig(
+		context.Background(),
+		config.WithRegion(s3Region),
+	)
+	if err != nil {
+		log.Fatalf("Couldn't load AWS config: %v", err)
+	}
+
+	s3Client := s3.NewFromConfig(awsCfg)
 
 	cfg := apiConfig{
 		db:               db,
@@ -90,6 +92,7 @@ func main() {
 		platform:         platform,
 		filepathRoot:     filepathRoot,
 		assetsRoot:       assetsRoot,
+		s3Client:         s3Client,
 		s3Bucket:         s3Bucket,
 		s3Region:         s3Region,
 		s3CfDistribution: s3CfDistribution,
@@ -102,11 +105,12 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+
 	appHandler := http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot)))
 	mux.Handle("/app/", appHandler)
 
-	assetsHandler := http.StripPrefix("/assets", http.FileServer(http.Dir(assetsRoot)))
-	mux.Handle("/assets/", cacheMiddleware(assetsHandler))
+	assetsHandler := http.StripPrefix("/assets/", http.FileServer(http.Dir(assetsRoot)))
+	mux.Handle("/assets/", noCacheMiddleware(assetsHandler))
 
 	mux.HandleFunc("POST /api/login", cfg.handlerLogin)
 	mux.HandleFunc("POST /api/refresh", cfg.handlerRefresh)
@@ -119,7 +123,6 @@ func main() {
 	mux.HandleFunc("POST /api/video_upload/{videoID}", cfg.handlerUploadVideo)
 	mux.HandleFunc("GET /api/videos", cfg.handlerVideosRetrieve)
 	mux.HandleFunc("GET /api/videos/{videoID}", cfg.handlerVideoGet)
-	mux.HandleFunc("GET /api/thumbnails/{videoID}", cfg.handlerThumbnailGet)
 	mux.HandleFunc("DELETE /api/videos/{videoID}", cfg.handlerVideoMetaDelete)
 
 	mux.HandleFunc("POST /admin/reset", cfg.handlerReset)
